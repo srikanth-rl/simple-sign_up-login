@@ -16,4 +16,3 @@ This project implements a simple Node.js application with user login and signup 
 
 <img width="942" alt="image_2023-11-30_23-42-43 (4)" src="https://github.com/Srikanth2810/simple-sign_up-login/assets/98140086/7b4f3fa8-fb78-4320-bec4-fc7b824e7f6e">
 
-![Screenshot from 2023-11-30 23-49-01](https://github.com/Srikanth2810/simple-sign_up-login/assets/98140086/0f4d2dcb-c1a0-49e5-a954-ea78abdfc7d8)
