@@ -10,11 +10,13 @@ app.use(bodyParser.urlencoded({
 }));
 app.use(express.static('Form'));
 
-mongoose.connect('mongodb://localhost:27017/users');
+const mongoURI = "mongodb://srikanth-rl:%23Srikanth2205@atlas-sql-65bf97f7eba2d94282cbe05b-get7d.a.query.mongodb.net/login-db?ssl=true&authSource=admin&directConnection=true";
+
+mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(() => console.log("DB connected..."))
+    .catch(err => console.error("Err in DB connection:", err));
 
 const db = mongoose.connection;
-db.on('error', () => console.log("Err in DB connection..."));
-db.once('open', () => console.log("DB connected..."));
 
 const userSchema = new mongoose.Schema({
     name: String,
@@ -23,55 +25,65 @@ const userSchema = new mongoose.Schema({
     password: String
 });
 
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model('User', userSchema, 'newUser');
 
 app.route('/login')
     .get((req, res) => {
         res.sendFile(__dirname + '/Form/login.html');
     })
     .post(async(req, res) => {
-        const email = req.body.email;
-        const password = req.body.password;
-        const user = await User.findOne({ email });
-        if (user) {
-            if (user.password === password) {
-                console.log("User logged in..", user);
-                return res.redirect('home.html');
+        try {
+            const email = req.body.email;
+            const password = req.body.password;
+            const user = await User.findOne({ email });
+            if (user) {
+                if (user.password === password) {
+                    console.log("User logged in..", user);
+                    return res.redirect('home.html');
+                } else {
+                    return res.status(401).send("Incorrect password. Enter the Right password...");
+                }
             } else {
-                return res.status(401).send("Incorrect password. Enter the Right password...");
+                console.log("User not registered");
+                return res.redirect('index.html');
             }
-        } else {
-            console.log("User not registered");
-            return res.redirect('index.html');
+        } catch (error) {
+            console.error("Error occurred:", error);
+            res.status(500).send("An error occurred while processing your request.");
         }
     });
 
 app.post("/sign_up", async(req, res) => {
-    const name = req.body.name;
-    const email = req.body.email;
-    const phno = req.body.phno;
-    const pwd = req.body.password;
-    const rePwd = req.body.rePassword;
+    try {
+        const name = req.body.name;
+        const email = req.body.email;
+        const phno = req.body.phno;
+        const pwd = req.body.password;
+        const rePwd = req.body.rePassword;
 
-    if (pwd !== rePwd) {
-        return res.redirect('/');
+        if (pwd !== rePwd) {
+            return res.redirect('/');
+        }
+
+        const existingUser = await User.findOne({ email: email });
+        if (existingUser) {
+            return res.status(400).send("Sorry, your Email id already exists.");
+        }
+
+        const newUser = new User({
+            name: name,
+            phone_no: phno,
+            email: email,
+            password: pwd
+        });
+
+        await newUser.save();
+        console.log("Record stored successfully..");
+        return res.redirect('login.html');
+    } catch (error) {
+        console.error("Error occurred:", error);
+        res.status(500).send("An error occurred while processing your request.");
     }
-
-    const existingUser = await User.findOne({ email: email });
-    if (existingUser) {
-        return res.status(400).send("Sorry, your Email id already exists.");
-    }
-
-    const newUser = new User({
-        name: name,
-        phone_no: phno,
-        email: email,
-        password: pwd
-    });
-
-    await newUser.save();
-    console.log("Record stored successfully..");
-    return res.redirect('login.html');
 });
 
 app.get("/", (req, res) => {
@@ -81,4 +93,5 @@ app.get("/", (req, res) => {
     return res.redirect('index.html');
 });
 
-app.listen(3000);
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
