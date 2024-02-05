@@ -14,19 +14,81 @@
         <div class="row">
             <div class="col-md-3"></div>
             <div class="col-md-6 main">
-                <form action="/login" method="POST">
+                <form id="loginForm" action="/login" method="POST">
                     <h2>Login Form</h2>
-                    <input type="email" class="box" id="email" name="email" placeholder="Email" autocomplete="" required />
+                    <input type="email" class="box" id="email" name="email" placeholder="Email" autocomplete="" required onblur="checkEmailAvailability(this.value)" />
                     <br>
-                    <input type="password" class="box" id="password" name="password" placeholder="Password" required/>
+                    <input type="password" class="box" id="password" name="password" placeholder="Password" required disabled />
                     <br>
-                    <input type="submit" value="Login" id="submit" />
+                    <input type="submit" value="Login" id="submit" disabled />
                 </form>
+                <p id="emailAvailability"></p>
+                <p style="text-align: center; margin-top: 20px;">Don't have an account? <a href="signup.html" style="color: #767474;">Sign Up</a></p>
+
             </div>
             <div class="col-md-3">
             </div>
         </div>
     </div>
+    <script>
+        document.getElementById("loginForm").addEventListener("submit", function(event) {
+            event.preventDefault(); // Prevent the default form submission
+
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "/login", true);
+            xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 401) {
+                        // If password is incorrect, display error message
+                        document.getElementById("emailAvailability").innerHTML = '<span style="color: red;">Incorrect password. Please enter the correct password.</span>';
+                    } else if (xhr.status === 200) {
+                        // If login is successful, redirect to home page
+                        window.location.href = 'home.html';
+                    } else {
+                        console.error("Error occurred while logging in");
+                    }
+                }
+            };
+            xhr.send(JSON.stringify({
+                email: email,
+                password: password
+            }));
+        });
+
+        function checkEmailAvailability(email) {
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "/checkEmail", true);
+            xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200) {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.exists) {
+                            // If email exists, enable password field
+                            document.getElementById("emailAvailability").innerHTML = '<span style="color: green;">Email exists.</span>';
+                            document.getElementById("password").disabled = false;
+                            document.getElementById("submit").disabled = false;
+                        } else {
+                            // If email does not exist, display error message and disable password field
+                            document.getElementById("emailAvailability").innerHTML = '<span style="color: red;">Email does not exist. Please enter a registered email.</span>';
+                            document.getElementById("password").disabled = true;
+                            document.getElementById("submit").disabled = true;
+                        }
+                    } else {
+                        console.error("Error occurred while checking email availability");
+                    }
+                }
+            };
+            xhr.send(JSON.stringify({
+                email: email
+            }));
+        }
+    </script>
+
 </body>
 
 </html>

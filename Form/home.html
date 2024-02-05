@@ -5,6 +5,57 @@
     <title>Registered</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Custom CSS for floating notification */
+        
+        .floating-notification {
+            position: fixed;
+            bottom: 0;
+            right: 20px;
+            width: 250px;
+            background-color: #4CAF50;
+            /* Green color for success */
+            color: white;
+            text-align: center;
+            padding: 16px;
+            border-radius: 5px 5px 0 0;
+            transition: 50s;
+            animation: floatUp 5s linear;
+            cursor: pointer;
+            display: none;
+        }
+        
+        .floating-notification:hover {
+            animation-play-state: paused;
+        }
+        
+        @keyframes floatUp {
+            0% {
+                bottom: 0;
+                opacity: 0;
+            }
+            10% {
+                bottom: 30px;
+                opacity: 1;
+            }
+            90% {
+                bottom: 30px;
+                opacity: 1;
+            }
+            100% {
+                bottom: 100%;
+                opacity: 0;
+            }
+        }
+        
+        .close-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-size: 20px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 
 <body>
@@ -15,11 +66,34 @@
             </div>
             <div class="col-md-6 main">
                 <h1 class="text-center">Welcome</h1>
+                <div id="successNotification" class="floating-notification">
+                    You are successfully logged in.
+                    <span class="close-button" onclick="this.parentNode.style.display='none'">&times;</span>
+                </div>
             </div>
             <div class="col-md-3">
             </div>
         </div>
     </div>
+
+    <!-- Floating notification for session timeout -->
+    <!-- <div id="sessionTimeoutNotification" class="floating-notification" onclick="this.style.display='none'">
+        Your session has timed out.
+        <span class="close-button" onclick="this.parentNode.style.display='none'">&times;</span>
+    </div> -->
+
+    <script>
+        var successNotificationShown = true;
+
+        function showSuccessNotificationOnce() {
+            if (successNotificationShown) {
+                document.getElementById("successNotification").style.display = "block";
+                successNotificationShown = false;
+            }
+        }
+
+        setTimeout(showSuccessNotificationOnce, 100);
+    </script>
 </body>
 
 </html>
