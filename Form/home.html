@@ -6,93 +6,98 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Custom CSS for floating notification */
+        /* Custom CSS */
         
         .floating-notification {
             position: fixed;
-            bottom: 0;
-            right: 20px;
-            width: 250px;
-            background-color: #4CAF50;
-            /* Green color for success */
-            color: white;
-            text-align: center;
-            padding: 16px;
-            border-radius: 5px 5px 0 0;
-            transition: 50s;
-            animation: floatUp 5s linear;
-            cursor: pointer;
+            font-weight: bold;
+            bottom: 25px;
+            right: 30px;
+            background-color: #28a745;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 5px;
+            animation: enlargeAndFade 6s ease-in-out forwards;
             display: none;
+            cursor: pointer;
         }
         
-        .floating-notification:hover {
-            animation-play-state: paused;
-        }
-        
-        @keyframes floatUp {
+        @keyframes enlargeAndFade {
             0% {
-                bottom: 0;
+                transform: scale(1);
                 opacity: 0;
             }
-            10% {
-                bottom: 30px;
-                opacity: 1;
-            }
-            90% {
-                bottom: 30px;
+            50% {
+                transform: scale(1.2);
                 opacity: 1;
             }
             100% {
-                bottom: 100%;
+                transform: scale(1);
                 opacity: 0;
             }
-        }
-        
-        .close-button {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            font-size: 20px;
-            cursor: pointer;
         }
     </style>
 </head>
 
-<body>
-    <br><br><br>
+<body style="background-color: #f4f4f4;">
     <div class="container">
         <div class="row">
-            <div class="col-md-3">
-            </div>
-            <div class="col-md-6 main">
-                <h1 class="text-center">Welcome</h1>
-                <div id="successNotification" class="floating-notification">
-                    You are successfully logged in.
-                    <span class="close-button" onclick="this.parentNode.style.display='none'">&times;</span>
-                </div>
-            </div>
-            <div class="col-md-3">
+            <div class="col-md-12">
+                <button id="logoutButton" class="btn btn-danger" style="float:right">Logout</button>
             </div>
         </div>
     </div>
 
-    <!-- Floating notification for session timeout -->
-    <!-- <div id="sessionTimeoutNotification" class="floating-notification" onclick="this.style.display='none'">
-        Your session has timed out.
-        <span class="close-button" onclick="this.parentNode.style.display='none'">&times;</span>
-    </div> -->
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3"></div>
+            <div class="col-md-6 main" style="background-color: #767474; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+                <h2 class="text-center" style="text-align: center; color:white;">Welcome</h2>
+                <div id="successNotification" class="floating-notification">
+                    You are successfully logged in.
+                </div>
+            </div>
+            <div class="col-md-3"></div>
+        </div>
+    </div>
 
     <script>
-        var successNotificationShown = true;
+        window.onload = function() {
+            var notification = document.getElementById('successNotification');
+            notification.style.display = 'block';
+            setTimeout(function() {
+                notification.style.animation = '';
+                notification.offsetHeight;
+                notification.style.animation = 'enlargeAndFade 6s ease-in-out forwards';
+            }, 1);
 
-        function showSuccessNotificationOnce() {
-            if (successNotificationShown) {
-                document.getElementById("successNotification").style.display = "block";
-                successNotificationShown = false;
-            }
-        }
+            notification.addEventListener('mouseenter', function() {
+                notification.style.animationPlayState = 'paused';
+            });
 
-        setTimeout(showSuccessNotificationOnce, 100);
+            notification.addEventListener('mouseleave', function() {
+                notification.style.animationPlayState = 'running';
+            });
+
+            document.getElementById('logoutButton').addEventListener('click', function() {
+                // Make a request to the server to log the user out
+                fetch('/logout', {
+                        method: 'GET'
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            // Redirect to the login page after successful logout
+                            window.location.href = 'login.html';
+                        } else {
+                            throw new Error('Failed to log out');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error logging out:', error);
+                        // Handle error if logout fails
+                    });
+            });
+        };
     </script>
 </body>
 

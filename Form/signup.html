@@ -14,22 +14,23 @@
         <div class="row">
             <div class="col-md-3"></div>
             <div class="col-md-6 main">
-                <form action="/sign_up" method="POST" onsubmit="return validateForm()">
+                <form action="/signup" method="POST" onsubmit="return validateForm()">
                     <h2>SignUp Form</h2>
-                    <input type="text" class="box" id="name" name="name" placeholder="Name" required />
+                    <input type="text" class="box" id="name" name="name" placeholder="Name" required onkeydown="if (event.keyCode === 13) document.getElementById('email').focus()" />
                     <br>
-                    <input type="email" class="box" id="email" name="email" placeholder="Email" autocomplete="" required onblur="checkEmailAvailability(this.value)" />
+                    <input type="email" class="box" id="email" name="email" placeholder="Email" autocomplete="" required onblur="checkEmailAvailability()" onkeydown="if (event.keyCode === 13) document.getElementById('phno').focus()" />
                     <div id="emailAvailability"></div>
                     <br>
-                    <input type="text" class="box" name="phno" placeholder="Mobile no" pattern="\d{10}" required title="Ten Digits" id="phno" disabled /> <br>
+                    <input type="text" class="box" name="phno" placeholder="Mobile no" pattern="\d{10}" required title="Ten Digits" id="phno" disabled onkeydown="if (event.keyCode === 13) document.getElementById('password').focus()" /> <br>
                     <input type="password" class="box" pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$" title="Must contain at least one number, one special character, one uppercase and one lowercase letter and be at least 8 characters long."
-                        id="password" name="password" placeholder="Password" required disabled />
+                        id="password" name="password" placeholder="Password" required disabled onkeydown="if (event.keyCode === 13) document.getElementById('rePassword').focus()" />
+                    <input type="checkbox" onclick="showPassword('password')"> Show Password <br>
                     <br>
                     <input type="password" class="box" id="rePassword" name="rePassword" placeholder="Re-enter Password" required disabled />
+                    <div id="passwordMismatch" style="color: red;"></div>
                     <br>
                     <input type="submit" value="Submit" id="submit" disabled />
                     <p style="text-align: center; margin-top: 20px;">Already have an account? <a href="login.html" style="color: #767474;">Login</a></p>
-
                 </form>
             </div>
             <div class="col-md-3">
@@ -37,22 +38,32 @@
         </div>
     </div>
     <script>
+        let typingTimer;
+        const doneTypingInterval = 1;
+
         function validateForm() {
             const password = document.getElementById('password').value;
             const rePassword = document.getElementById('rePassword').value;
             if (password !== rePassword) {
-                alert('Passwords do not match');
+                document.getElementById("passwordMismatch").innerHTML = "Passwords do not match";
                 return false;
             }
             return true;
         }
 
-        function checkEmailAvailability(email) {
+        function delayedCheckEmailAvailability(email) {
+            clearTimeout(typingTimer);
+            typingTimer = setTimeout(() => checkEmailAvailability(email), doneTypingInterval);
+        }
+
+        function checkEmailAvailability() {
+            const email = document.getElementById("email").value;
+            if (email.indexOf("@") === -1) {
+                document.getElementById("emailAvailability").innerHTML = '';
+                return;
+            }
             const xhr = new XMLHttpRequest();
             xhr.open("POST", "/checkEmail", true);
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email))
-                return;
             xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === XMLHttpRequest.DONE) {
@@ -80,8 +91,16 @@
                 email: email
             }));
         }
-    </script>
 
+        function showPassword(id) {
+            const x = document.getElementById(id);
+            if (x.type === "password") {
+                x.type = "text";
+            } else {
+                x.type = "password";
+            }
+        }
+    </script>
 </body>
 
 </html>

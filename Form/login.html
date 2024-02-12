@@ -16,21 +16,76 @@
             <div class="col-md-6 main">
                 <form id="loginForm" action="/login" method="POST">
                     <h2>Login Form</h2>
-                    <input type="email" class="box" id="email" name="email" placeholder="Email" autocomplete="" required onblur="checkEmailAvailability(this.value)" />
+                    <input type="email" class="box" id="email" name="email" placeholder="Email" autocomplete="" required onkeyup="delayedCheckEmailAvailability(event)" />
                     <br>
                     <input type="password" class="box" id="password" name="password" placeholder="Password" required disabled />
                     <br>
                     <input type="submit" value="Login" id="submit" disabled />
                 </form>
                 <p id="emailAvailability"></p>
-                <p style="text-align: center; margin-top: 20px;">Don't have an account? <a href="signup.html" style="color: #767474;">Sign Up</a></p>
+                <p id="forgotPassword" style="text-align: center; margin-top: 10px; display: none;"><a href="#" style="color: #767474;" onclick="showForgotPassword()">Forgot Password?</a></p>
+                <div id="forgotPasswordSection" style="display: none;">
+                    <form id="passwordResetForm">
+                        <input type="text" class="box" id="verificationCode" name="verificationCode" placeholder="Verification Code" />
+                        <br>
+                        <div id="newPasswordSection" style="display: none;">
+                            <input type="password" class="box" id="newPassword" name="newPassword" placeholder="New Password" />
+                            <br>
+                            <input type="password" class="box" id="confirmNewPassword" name="confirmNewPassword" placeholder="Confirm New Password" />
+                            <br>
+                        </div>
+                        <input type="button" value="Reset Password" id="resetPassword" onclick="resetPassword()" />
+                    </form>
+                </div>
 
+                <p style="text-align: center; margin-top: 20px;">Don't have an account? <a href="signup.html" style="color: #767474;">Sign Up</a></p>
             </div>
             <div class="col-md-3">
             </div>
         </div>
     </div>
     <script>
+        let typingTimer;
+        const doneTypingInterval = 500;
+
+        function delayedCheckEmailAvailability(event) {
+            clearTimeout(typingTimer);
+            typingTimer = setTimeout(checkEmailAvailability, doneTypingInterval, event);
+        }
+
+        function checkEmailAvailability(event) {
+            const email = document.getElementById("email").value;
+            if (email.indexOf("@") === -1) {
+                document.getElementById("emailAvailability").innerHTML = '';
+                return;
+            }
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "/checkEmail", true);
+            xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200) {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.exists) {
+                            document.getElementById("emailAvailability").innerHTML = '<span style="color: green;">Email exists.</span>';
+                            document.getElementById("password").disabled = false;
+                            document.getElementById("submit").disabled = false;
+                        } else {
+                            document.getElementById("emailAvailability").innerHTML = '<span style="color: red;">Email does not exist. Please enter a registered email.</span>';
+                            document.getElementById("password").disabled = true;
+                            document.getElementById("submit").disabled = true;
+                            document.getElementById("forgotPassword").style.display = "none";
+                        }
+                    } else {
+                        console.error("Error occurred while checking email availability");
+                    }
+                }
+            };
+            xhr.send(JSON.stringify({
+                email: email
+            }));
+        }
+
         document.getElementById("loginForm").addEventListener("submit", function(event) {
             event.preventDefault(); // Prevent the default form submission
 
@@ -43,10 +98,9 @@
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === XMLHttpRequest.DONE) {
                     if (xhr.status === 401) {
-                        // If password is incorrect, display error message
                         document.getElementById("emailAvailability").innerHTML = '<span style="color: red;">Incorrect password. Please enter the correct password.</span>';
+                        document.getElementById("forgotPassword").style.display = "block";
                     } else if (xhr.status === 200) {
-                        // If login is successful, redirect to home page
                         window.location.href = 'home.html';
                     } else {
                         console.error("Error occurred while logging in");
@@ -59,33 +113,74 @@
             }));
         });
 
-        function checkEmailAvailability(email) {
-            const xhr = new XMLHttpRequest();
-            xhr.open("POST", "/checkEmail", true);
-            xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === XMLHttpRequest.DONE) {
-                    if (xhr.status === 200) {
-                        const response = JSON.parse(xhr.responseText);
-                        if (response.exists) {
-                            // If email exists, enable password field
-                            document.getElementById("emailAvailability").innerHTML = '<span style="color: green;">Email exists.</span>';
-                            document.getElementById("password").disabled = false;
-                            document.getElementById("submit").disabled = false;
-                        } else {
-                            // If email does not exist, display error message and disable password field
-                            document.getElementById("emailAvailability").innerHTML = '<span style="color: red;">Email does not exist. Please enter a registered email.</span>';
-                            document.getElementById("password").disabled = true;
-                            document.getElementById("submit").disabled = true;
-                        }
+        function showForgotPassword() {
+            document.getElementById("forgotPasswordSection").style.display = "block";
+            document.getElementById("forgotPassword").style.display = "none";
+
+            const email = document.getElementById('email').value;
+            if (!email) {
+                alert('Please enter your email address.');
+                return;
+            }
+            fetch('/forgotPassword', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email
+                    })
+                })
+                .then(response => {
+                    if (response.ok) {
+                        alert('Verification email sent successfully.');
+                        document.getElementById("verificationCode").disabled = false;
+                        document.getElementById("resetPassword").disabled = false;
+                        // Show the new password fields
+                        document.getElementById("newPasswordSection").style.display = "block";
                     } else {
-                        console.error("Error occurred while checking email availability");
+                        throw new Error('Failed to send verification email.');
                     }
-                }
-            };
-            xhr.send(JSON.stringify({
-                email: email
-            }));
+                })
+                .catch(error => {
+                    console.error('Error sending verification email:', error);
+                    alert('Failed to send verification email. Please try again later.');
+                });
+        }
+
+        function resetPassword() {
+            const verificationCode = document.getElementById("verificationCode").value;
+            const newPassword = document.getElementById("newPassword").value;
+            const confirmNewPassword = document.getElementById("confirmNewPassword").value;
+
+            if (newPassword !== confirmNewPassword) {
+                alert("Passwords do not match.");
+                return;
+            }
+
+            fetch('/resetPassword', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        verificationCode,
+                        newPassword
+                    })
+                })
+                .then(response => {
+                    if (response.ok) {
+                        alert('Password reset successfully.');
+                        // Optionally redirect the user to the login page
+                        window.location.href = 'login.html';
+                    } else {
+                        throw new Error('Failed to reset password.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error resetting password:', error);
+                    alert('Failed to reset password. Please try again later.');
+                });
         }
     </script>
 
